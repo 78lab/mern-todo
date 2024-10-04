@@ -40,39 +40,49 @@ app.get('/mise',async (req, res) => {
     try {
         const data = {}
 
-        const geoRes = await axios.get('https://dapi.kakao.com/v2/local/geo/coord2address.json',{
+        const coord2addressApi = await axios.get('https://dapi.kakao.com/v2/local/geo/coord2address.json',{
             headers: {'Authorization': process.env.KAKAO_API_KEY},
             params: {
               x:x, y:y, input_coord:"WGS84"
             }
           })
 
-        const umdName = geoRes.data.documents[0].address.region_3depth_name
-        console.log(umdName)
-
-        const getTMxyRes = await axios.get(getTMxyUrl,{
+        const transcoordApi = await axios.get('https://dapi.kakao.com/v2/local/geo/transcoord.json',{
+            headers: {'Authorization': process.env.KAKAO_API_KEY},
             params: {
-              serviceKey: process.env.AIR_SERVICE_KEY,   // 자신의 API 키 사용
-              returnType: 'json',
-              numOfRows: 10,
-              pageNo: 1,
-              umdName,                // 클라이언트에서 받은 umdName 파라미터 전달
-            },
+              x:x, y:y, output_coord:"TM"
+            }
           })
+
+        const[coord2addressRes, transcoordRes] = await Promise.all([coord2addressApi, transcoordApi])
+
+        const umdName = coord2addressRes.data.documents[0].address.region_3depth_name
+        const tmXYData = transcoordRes.data.documents[0]
+        console.log(umdName,tmXYData)
+
+        // const getTMxyRes = await axios.get(getTMxyUrl,{
+        //     params: {
+        //       serviceKey: process.env.AIR_SERVICE_KEY,   // 자신의 API 키 사용
+        //       returnType: 'json',
+        //       numOfRows: 10,
+        //       pageNo: 1,
+        //       umdName,                // 클라이언트에서 받은 umdName 파라미터 전달
+        //     },
+        //   })
         // console.log(getTMxyRes)
-        const tmData = getTMxyRes.data.response.body.items[0]
-        console.log(tmData)
+        // const tmData = getTMxyRes.data.response.body.items[0]
+        // console.log(tmData)
         // tmX, tmY 값 추출
-        const tmX = tmData.tmX;
-        const tmY = tmData.tmY;
-        console.log(tmX,tmY)
+        // const tmX = tmData.tmX;
+        // const tmY = tmData.tmY;
+        // console.log(tmX,tmY)
 
         const nearAirStationRes = await axios.get(nearAirStationUrl,{
             params: {
                 serviceKey: process.env.AIR_SERVICE_KEY,   // 자신의 API 키 사용 (my_key 자리에 본인의 키 입력)
                 returnType: 'json',
-                tmX,                    // 클라이언트로부터 받은 tmX 값
-                tmY,                    // 클라이언트로부터 받은 tmY 값
+                tmX:tmXYData.x,                    // 클라이언트로부터 받은 tmX 값
+                tmY:tmXYData.y,                    // 클라이언트로부터 받은 tmY 값
                 ver:'1.1',                    // 클라이언트로부터 받은 API 버전 (ver)
               },
         })
@@ -94,7 +104,7 @@ app.get('/mise',async (req, res) => {
 
         
         data.items = nearAirConditionRes.data.response.body.items.map(item => ({...item,pm10Grade1h:item.pm10Grade,pm25Grade1h:item.pm25Grade,  stationName: data.stationName}))
-        data.addr = geoRes.data.documents[0].address.address_name
+        data.addr = umdName
         data.msg = msg
         data.forecast = forecast
         data.sido = sido
