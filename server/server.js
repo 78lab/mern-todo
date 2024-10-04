@@ -93,7 +93,7 @@ app.get('/mise',async (req, res) => {
         })
 
         
-        data.items = nearAirConditionRes.data.response.body.items.map(item => ({...item, stationName: data.stationName}))
+        data.items = nearAirConditionRes.data.response.body.items.map(item => ({...item,pm10Grade1h:item.pm10Grade,pm25Grade1h:item.pm25Grade,  stationName: data.stationName}))
         data.addr = geoRes.data.documents[0].address.address_name
         data.msg = msg
         data.forecast = forecast
