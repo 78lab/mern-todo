@@ -5,6 +5,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const todoRoutes = require('./routes/todoRoutes');
+const metroRoutes = require('./routes/metroRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -15,6 +16,7 @@ app.use(express.json());
 
 // Routes
 app.use('/todos', todoRoutes);
+app.use('/metro', metroRoutes);
 
 // const KAKAO_API_KEY = "KakaoAK 59d6afe3e3b5669568c1be0f4c22c65e";
 // const AIR_SERVICE_KEY = "AruAfuXNbzd/SJ3kjpQFaLUngxr8ce4O1IKHJFtPxxk8CBngL8FvTffnsrWwirDx4t1kESNbX1nS7M3z4x5tuQ==";
