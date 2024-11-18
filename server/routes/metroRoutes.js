@@ -173,8 +173,9 @@ router.get('/msgfortrain', async (req, res) => {
         console.log(items)
 
         const {msg,title} = makeMsgsForStations(items);
-
-        res.json([{msg: msg,title:title}]);
+        resData = [{msg: msg,title:title, currentStationCD: items[0].STATION_CD}]
+        console.log(resData)
+        res.json(resData);
 
     } catch (error) {
         console.error('Error fetching messages:', error);
@@ -219,8 +220,9 @@ router.get('/msgforstation', async (req, res) => {
         console.log(trains)
 
         const {msg,title} = makeMsgsWithTrains(trains);
-
-        res.json([{msg: msg,title:title}]);
+        const resData =  [{msg: msg,title:title, currentTrainNo:trains[0].TRAIN_NO}] //trains.map{x => x.TRAIN_NO}
+        console.log(resData)
+        res.json(resData);
 
     } catch (error) {
         console.error('Error fetching messages:', error);
