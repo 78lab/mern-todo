@@ -262,8 +262,9 @@ router.get('/timetable', async (req, res) => {
     
     if (frCode) { 
       query.FR_CODE = frCode; 
-      if(inoutTag == 1) sort.TRAIN_NO = -1;
-      else sort.TRAIN_NO = 1; 
+      sort.TRAIN_NO = 1; 
+      // if(inoutTag == 1) sort.TRAIN_NO = -1;
+      // else sort.TRAIN_NO = 1; 
     }
 
     if (trainNo) { 
