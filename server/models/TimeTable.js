@@ -17,7 +17,9 @@ const TimeTableSchema = new mongoose.Schema({
   FL_FLAG: { type: String },
   DESTSTATION2: { type: String },
   EXPRESS_YN: { type: String, required: true },
-  BRANCH_LINE: { type: String }
+  BRANCH_LINE: { type: String },
+  delay: { type: Number, default: 0 },
+  realtimemsg: { type: String },
 }, { timestamps: true });
 
 module.exports = mongoose.model('TimeTable', TimeTableSchema);

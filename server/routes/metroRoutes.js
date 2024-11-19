@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const TimeTable = require('../models/TimeTable');
+const Train = require('../models/Train');
 const MetroStation = require('../models/MetroStation');
 const router = express.Router();
 
@@ -169,11 +170,23 @@ router.get('/msgfortrain', async (req, res) => {
     try {
         // Fetch data from the external API
         console.log(query,sort)
-        const items = await TimeTable.find(query).sort(sort).limit(1);
+        // const items = await TimeTable.find(query).sort(sort).limit(1);
+        const items = await TimeTable.find(query)
+            //   .populate({
+            //     path: 'TRAIN_NO',
+            //     foreignField: 'trainNo',    // Field in Profile model
+            //     localField: 'TRAIN_NO'       // Field in User model
+            // })
+            .sort(sort).limit(1);
+
+        const trainData = await Train.findOne({trainNo:trainNo})
+
+
+
         console.log(items)
 
         const {msg,title} = makeMsgsForStations(items);
-        resData = [{msg: msg,title:title, currentStationCD: items[0].STATION_CD}]
+        resData = [{msg: msg,title:title, currentStationCD: items[0]?.STATION_CD,trainData:trainData}]
         console.log(resData)
         res.json(resData);
 
@@ -198,13 +211,14 @@ router.get('/msgforstation', async (req, res) => {
     let weekTag = req.query.week_tag;
     let query = {}
     let sort = {}
-    if (frCode) { query.FR_CODE = frCode; }
+
     if (inoutTag) { query.INOUT_TAG = inoutTag; }
     if (weekTag) { query.WEEK_TAG = weekTag; }
-    if (trainNo) { 
-      query.TRAIN_NO = trainNo; 
-      if(inoutTag == 1) sort.FR_CODE = -1;
-      else sort.FR_CODE = 1; 
+    if (frCode) { 
+      query.FR_CODE = frCode; 
+      sort.TRAIN_NO = 1; 
+      // if(inoutTag == 1) sort.TRAIN_NO = -1;
+      // else sort.TRAIN_NO = 1; 
     }
 
 
@@ -220,7 +234,7 @@ router.get('/msgforstation', async (req, res) => {
         console.log(trains)
 
         const {msg,title} = makeMsgsWithTrains(trains);
-        const resData =  [{msg: msg,title:title, currentTrainNo:trains[0].TRAIN_NO}] //trains.map{x => x.TRAIN_NO}
+        const resData =  [{msg: msg,title:title, currentTrainNo:trains[0]?.TRAIN_NO}] //trains.map{x => x.TRAIN_NO}
         console.log(resData)
         res.json(resData);
 
@@ -237,18 +251,24 @@ router.get('/msgforstation', async (req, res) => {
 // Get time table
 router.get('/timetable', async (req, res) => {
   try {
-    let fr_code = req.query.fr_code;
-    let inout_tag = req.query.inout_tag;
-    let week_tag = req.query.week_tag;
-    let train_no = req.query.train_no;
+    let frCode = req.query.fr_code;
+    let inoutTag = req.query.inout_tag;
+    let weekTag = req.query.week_tag;
+    let trainNo = req.query.train_no;
     let query = {}
     let sort = {}
-    if (fr_code) { query.FR_CODE = fr_code; }
-    if (inout_tag) { query.INOUT_TAG = inout_tag; }
-    if (week_tag) { query.WEEK_TAG = week_tag; }
-    if (train_no) { 
-      query.TRAIN_NO = train_no; 
-      if(inout_tag == 1) sort.FR_CODE = -1;
+    if (inoutTag) { query.INOUT_TAG = inoutTag; }
+    if (weekTag) { query.WEEK_TAG = weekTag; }
+    
+    if (frCode) { 
+      query.FR_CODE = frCode; 
+      if(inoutTag == 1) sort.TRAIN_NO = -1;
+      else sort.TRAIN_NO = 1; 
+    }
+
+    if (trainNo) { 
+      query.TRAIN_NO = trainNo; 
+      if(inoutTag == 1) sort.FR_CODE = -1;
       else sort.FR_CODE = 1; 
     }
 

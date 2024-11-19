@@ -29,10 +29,10 @@ const TrainSchema = new mongoose.Schema({
         type: String,
         required: true,
       },
-    //   lstcarAt: {    //막차여부
-    //     type: String,
-    //     required: true,
-    //   },
+      lstcarAt: {    //막차여부
+        type: String,
+        required: true,
+      },
   }, { timestamps: true });
 
 const Train = mongoose.model('Train', TrainSchema);
