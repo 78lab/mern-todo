@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const TrainSchema = new mongoose.Schema({
+    TRAIN_NO: {
+      type: String,
+      required: true,
+    },
     trainNo: {
       type: String,
       required: true,
@@ -33,6 +37,7 @@ const TrainSchema = new mongoose.Schema({
         type: String,
         required: true,
       },
+      delay: { type: Number, default: 0 },
   }, { timestamps: true });
 
 const Train = mongoose.model('Train', TrainSchema);

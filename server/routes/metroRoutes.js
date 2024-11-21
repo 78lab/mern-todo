@@ -3,6 +3,7 @@ const axios = require('axios');
 const TimeTable = require('../models/TimeTable');
 const Train = require('../models/Train');
 const MetroStation = require('../models/MetroStation');
+const { isTemplateMiddle } = require('typescript');
 const router = express.Router();
 
 const SEOUL_SERVICE_KEY = process.env.SEOUL_SERVICE_KEY;
@@ -11,14 +12,14 @@ const SEOUL_BASE_URL = "http://swopenapi.seoul.go.kr/api/subway";
 
 // let tag_messages = [];
 
-const calculateTimeLeft = (leftTime) => {
+const calculateTimeLeft = (leftTime, delay) => {
   const [hours, minutes, seconds] = leftTime.split(':');
   const leftTimeInSeconds = parseInt(hours) * 3600 + parseInt(minutes) * 60 + parseInt(seconds);
 
   const currentDate = new Date();
   const currentTimeInSeconds = currentDate.getHours() * 3600 + currentDate.getMinutes() * 60 + currentDate.getSeconds();
 
-  const timeDifferenceInSeconds = leftTimeInSeconds - currentTimeInSeconds;
+  const timeDifferenceInSeconds = leftTimeInSeconds - currentTimeInSeconds + delay;
   const min = Math.floor(timeDifferenceInSeconds / 60);
   const sec = timeDifferenceInSeconds % 60;
 
@@ -28,6 +29,7 @@ const calculateTimeLeft = (leftTime) => {
 const makeMsgsForStations = (items) => {
   let msg = null;
   let title = null;
+  // let nowData = null;
   // let train_updn = null;
 
   items.forEach(item => {
@@ -43,7 +45,7 @@ const makeMsgsForStations = (items) => {
         WEEK_TAG,
         STATION_CD,
         STATION_NM,
-        LINE_NUM
+        LINE_NUM,
           // ordkey,
           // trainLineNm,
           // statnId,
@@ -52,36 +54,37 @@ const makeMsgsForStations = (items) => {
           // arvlMsg2: rawArvlMsg2,
           // arvlMsg3: train_station_name,
           // recptnDt,
-          // btrainSttus,
+          // trainSttus,
           // lstcarAt,
           // updnLine: train_updn
       } = item;
-
+      // nowData = item
       // let arvlMsg2 = rawArvlMsg2.startsWith("전역") 
       //     ? `${rawArvlMsg2}(${train_station_name})`
       //     : rawArvlMsg2;
-      console.log(STATION_NM,ARRIVETIME, LEFTTIME);
-      const {min, sec} = calculateTimeLeft(ARRIVETIME);
+      console.log(STATION_NM,ARRIVETIME, LEFTTIME,TRAIN_NO.recptnDt,TRAIN_NO.trainSttus,TRAIN_NO.delay);
+      const {min, sec} = calculateTimeLeft(ARRIVETIME,TRAIN_NO.delay);
 
       const msgTemp = `이번역 ${STATION_NM} ${min}분 ${sec}초 후`;
 
       msg = msg ? `${msg}\n${msgTemp}` : msgTemp;
-      title = `${TRAIN_NO}열차(${LINE_NUM}) 탑승중 ${SUBWAYSNAME}>${SUBWAYENAME} `;
+      title = `${TRAIN_NO.TRAIN_NO}열차(${LINE_NUM}) 탑승중 ${SUBWAYSNAME}>${SUBWAYENAME} delay:${TRAIN_NO.delay} `;
   });
   
   // title = `${trains[0].statnNm}역(${trains[0].trainLineNm}) ${timeAgo(trains[0].recptnDt)}`;
   // const updn = train_updn === "상행" ? "0" : "1";
   // const tag_key = `s-${trains[0].statnId}-${updn}`;
   // const tag_val = "true";
-
-  console.log(msg, title);
-  return { msg, title }; 
+  resData = [{ msg, title,currentStationCD:items[0]?.FR_CODE,nowData:items[0]}]
+  console.log(resData);
+  return resData; 
 }
 
 
 const makeMsgsWithTrains = (trains) => {
     let msg = null;
     let title = null;
+    // let nowData = null;
     // let train_updn = null;
 
     trains.forEach(item => {
@@ -97,7 +100,7 @@ const makeMsgsWithTrains = (trains) => {
           WEEK_TAG,
           STATION_CD,
           STATION_NM,
-          LINE_NUM
+          LINE_NUM,
             // ordkey,
             // trainLineNm,
             // statnId,
@@ -106,21 +109,21 @@ const makeMsgsWithTrains = (trains) => {
             // arvlMsg2: rawArvlMsg2,
             // arvlMsg3: train_station_name,
             // recptnDt,
-            // btrainSttus,
+            // trainSttus,
             // lstcarAt,
             // updnLine: train_updn
         } = item;
-
+        // nowData = item;
         // let arvlMsg2 = rawArvlMsg2.startsWith("전역") 
         //     ? `${rawArvlMsg2}(${train_station_name})`
         //     : rawArvlMsg2;
-        console.log(TRAIN_NO,ARRIVETIME, LEFTTIME);
-        const {min, sec} = calculateTimeLeft(LEFTTIME);
+        console.log(TRAIN_NO.TRAIN_NO,ARRIVETIME, LEFTTIME,TRAIN_NO.recptnDt,TRAIN_NO.trainSttus,TRAIN_NO.delay);
+        const {min, sec} = calculateTimeLeft(ARRIVETIME,TRAIN_NO.delay);
 
-        const msgTemp = `(${TRAIN_NO}) ${min}분 ${sec}초 후`;
+        const msgTemp = `(${TRAIN_NO.TRAIN_NO}) ${min}분 ${sec}초 d:${TRAIN_NO.delay}`;
 
         msg = msg ? `${msg}\n${msgTemp}` : msgTemp;
-        title = `${STATION_NM}역(${LINE_NUM}) ${SUBWAYSNAME}>${SUBWAYENAME} `;
+        title = `${STATION_NM}역(${LINE_NUM}) ${SUBWAYSNAME}>${SUBWAYENAME}`;
     });
     
     // title = `${trains[0].statnNm}역(${trains[0].trainLineNm}) ${timeAgo(trains[0].recptnDt)}`;
@@ -128,9 +131,12 @@ const makeMsgsWithTrains = (trains) => {
     // const tag_key = `s-${trains[0].statnId}-${updn}`;
     // const tag_val = "true";
 
-    console.log(msg, title);
-    return { msg, title };
-    // tag_messages.push({ tag_key, tag_value: tag_val, message: push_msg, title: push_title });
+    // console.log(msg, title);
+    // return { msg, title };
+
+    resData = [{ msg, title,currentTrainNo:trains[0]?.trainNo,nowData:trains[0]}]
+    console.log(resData);
+    return resData; 
 };
 
 
@@ -172,21 +178,20 @@ router.get('/msgfortrain', async (req, res) => {
         console.log(query,sort)
         // const items = await TimeTable.find(query).sort(sort).limit(1);
         const items = await TimeTable.find(query)
-            //   .populate({
-            //     path: 'TRAIN_NO',
-            //     foreignField: 'trainNo',    // Field in Profile model
-            //     localField: 'TRAIN_NO'       // Field in User model
-            // })
+            // .populate('TRAIN_NO')
+              .populate({
+                path: 'TRAIN_NO',
+                foreignField: 'TRAIN_NO',    // Field in Profile model
+                localField: 'TRAIN_NO',       // Field in User model
+                select: 'TRAIN_NO statnId lastRecptnDt recptnDt trainSttus delay -_id'    // Select specific fields
+            })
             .sort(sort).limit(1);
 
-        const trainData = await Train.findOne({trainNo:trainNo})
-
-
-
+        // const trainData = await Train.findOne({trainNo:trainNo})
         console.log(items)
 
-        const {msg,title} = makeMsgsForStations(items);
-        resData = [{msg: msg,title:title, currentStationCD: items[0]?.STATION_CD,trainData:trainData}]
+        // const {msg,title} = makeMsgsForStations(items);
+        const resData = makeMsgsForStations(items);//[{msg: msg,title:title, currentStationCD: items[0]?.STATION_CD,trainData:trainData}]
         console.log(resData)
         res.json(resData);
 
@@ -221,7 +226,6 @@ router.get('/msgforstation', async (req, res) => {
       // else sort.TRAIN_NO = 1; 
     }
 
-
     const currentTime = formatTime(new Date());
     console.log(currentTime)
 
@@ -230,11 +234,18 @@ router.get('/msgforstation', async (req, res) => {
     try {
         // Fetch data from the external API
         console.log(query,sort)
-        const trains = await TimeTable.find(query).sort(sort).limit(2);
+        const trains = await TimeTable.find(query)
+              .populate({
+                path: 'TRAIN_NO',
+                foreignField: 'TRAIN_NO',    // Field in Profile model
+                localField: 'TRAIN_NO',       // Field in User model
+                select: 'TRAIN_NO statnId lastRecptnDt recptnDt trainSttus delay -_id'    // Select specific fields
+              })
+              .sort(sort).limit(2);
         console.log(trains)
 
-        const {msg,title} = makeMsgsWithTrains(trains);
-        const resData =  [{msg: msg,title:title, currentTrainNo:trains[0]?.TRAIN_NO}] //trains.map{x => x.TRAIN_NO}
+        // const {msg,title} = makeMsgsWithTrains(trains);
+        const resData = makeMsgsWithTrains(trains);//[{msg: msg,title:title, ] //trains.map{x => x.TRAIN_NO}
         console.log(resData)
         res.json(resData);
 
