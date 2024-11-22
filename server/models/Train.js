@@ -22,11 +22,11 @@ const TrainSchema = new mongoose.Schema({
         required: true,
       },
       updnLine: {
-        type: Number,
+        type: String,
         required: true,
       },
       trainSttus: { //열차상태구분(0:진입 1:도착, 2:출발, 3:전역출발)
-        type: Number,
+        type: String,
         required: true,
       },
       directAt: {   //급행여부(1:급행, 0:아님, 7:특급)

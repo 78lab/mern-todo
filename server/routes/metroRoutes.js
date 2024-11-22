@@ -26,13 +26,12 @@ const calculateTimeLeft = (leftTime, delay) => {
   return {min, sec};
 };
 
-const makeMsgsForStations = (items) => {
+const makeMsgsForStation = (item, trainData) => {
   let msg = null;
   let title = null;
   // let nowData = null;
   // let train_updn = null;
 
-  items.forEach(item => {
       const {
         TRAIN_NO,
         FR_CODE,
@@ -46,42 +45,34 @@ const makeMsgsForStations = (items) => {
         STATION_CD,
         STATION_NM,
         LINE_NUM,
-          // ordkey,
-          // trainLineNm,
-          // statnId,
-          // statnNm: current_station_name,
-          // btrainNo,
-          // arvlMsg2: rawArvlMsg2,
-          // arvlMsg3: train_station_name,
-          // recptnDt,
-          // trainSttus,
-          // lstcarAt,
-          // updnLine: train_updn
       } = item;
-      // nowData = item
-      // let arvlMsg2 = rawArvlMsg2.startsWith("전역") 
-      //     ? `${rawArvlMsg2}(${train_station_name})`
-      //     : rawArvlMsg2;
-      console.log(STATION_NM,ARRIVETIME, LEFTTIME,TRAIN_NO.recptnDt,TRAIN_NO.trainSttus,TRAIN_NO.delay);
-      const {min, sec} = calculateTimeLeft(ARRIVETIME,TRAIN_NO.delay);
 
-      const msgTemp = `이번역 ${STATION_NM} ${min}분 ${sec}초 후`;
+      const {
+        recptnDt,
+        trainSttus,
+        delay
+      } = trainData
+
+      console.log(STATION_NM,ARRIVETIME, LEFTTIME,recptnDt,trainSttus,delay);
+      const {min, sec} = calculateTimeLeft(ARRIVETIME,delay);
+
+      const msgTemp = `이번역 ${STATION_NM} ${min}분 ${sec}초 d:${delay}`;
 
       msg = msg ? `${msg}\n${msgTemp}` : msgTemp;
-      title = `${TRAIN_NO.TRAIN_NO}열차(${LINE_NUM}) 탑승중 ${SUBWAYSNAME}>${SUBWAYENAME} delay:${TRAIN_NO.delay} `;
-  });
+      title = `${TRAIN_NO}열차(${LINE_NUM}) 탑승중 ${SUBWAYSNAME}>${SUBWAYENAME}`;
+
   
   // title = `${trains[0].statnNm}역(${trains[0].trainLineNm}) ${timeAgo(trains[0].recptnDt)}`;
   // const updn = train_updn === "상행" ? "0" : "1";
   // const tag_key = `s-${trains[0].statnId}-${updn}`;
   // const tag_val = "true";
-  resData = [{ msg, title,currentStationCD:items[0]?.FR_CODE,nowData:items[0]}]
+  resData = [{ msg, title,currentStationCD:FR_CODE,trainData:trainData}]
   console.log(resData);
   return resData; 
 }
 
 
-const makeMsgsWithTrains = (trains) => {
+const makeMsgsWithTrains = (trains, trainData) => {
     let msg = null;
     let title = null;
     // let nowData = null;
@@ -100,27 +91,19 @@ const makeMsgsWithTrains = (trains) => {
           WEEK_TAG,
           STATION_CD,
           STATION_NM,
-          LINE_NUM,
-            // ordkey,
-            // trainLineNm,
-            // statnId,
-            // statnNm: current_station_name,
-            // btrainNo,
-            // arvlMsg2: rawArvlMsg2,
-            // arvlMsg3: train_station_name,
-            // recptnDt,
-            // trainSttus,
-            // lstcarAt,
-            // updnLine: train_updn
+          LINE_NUM
         } = item;
-        // nowData = item;
-        // let arvlMsg2 = rawArvlMsg2.startsWith("전역") 
-        //     ? `${rawArvlMsg2}(${train_station_name})`
-        //     : rawArvlMsg2;
-        console.log(TRAIN_NO.TRAIN_NO,ARRIVETIME, LEFTTIME,TRAIN_NO.recptnDt,TRAIN_NO.trainSttus,TRAIN_NO.delay);
-        const {min, sec} = calculateTimeLeft(ARRIVETIME,TRAIN_NO.delay);
+        const {
+          recptnDt,
+          trainSttus,
+          delay
+        } = trainData
 
-        const msgTemp = `(${TRAIN_NO.TRAIN_NO}) ${min}분 ${sec}초 d:${TRAIN_NO.delay}`;
+
+        console.log(TRAIN_NO,ARRIVETIME, LEFTTIME,recptnDt,trainSttus,delay);
+        const {min, sec} = calculateTimeLeft(ARRIVETIME,delay);
+
+        const msgTemp = `(${TRAIN_NO}) ${min}분 ${sec}초 d:${delay}`;
 
         msg = msg ? `${msg}\n${msgTemp}` : msgTemp;
         title = `${STATION_NM}역(${LINE_NUM}) ${SUBWAYSNAME}>${SUBWAYENAME}`;
@@ -168,30 +151,42 @@ router.get('/msgfortrain', async (req, res) => {
       else sort.FR_CODE = 1; 
     }
 
-    const currentTime = formatTime(new Date());
-    console.log(currentTime)
-
-    query.ARRIVETIME = { $gt: currentTime };
-
     try {
         // Fetch data from the external API
-        console.log(query,sort)
-        // const items = await TimeTable.find(query).sort(sort).limit(1);
-        const items = await TimeTable.find(query)
-            // .populate('TRAIN_NO')
-              .populate({
-                path: 'TRAIN_NO',
-                foreignField: 'TRAIN_NO',    // Field in Profile model
-                localField: 'TRAIN_NO',       // Field in User model
-                select: 'TRAIN_NO statnId lastRecptnDt recptnDt trainSttus delay -_id'    // Select specific fields
-            })
-            .sort(sort).limit(1);
+        
+        const trainData = await Train.findOne({'trainNo':trainNo})
+        console.log(trainData)
 
+        const {
+          statnId,
+          recptnDt,
+          trainSttus,
+          delay
+        } = trainData;
+
+        if(delay){
+          const FomattedTime = formatTime(new Date());
+          const delayedDatetime = new Date(Date.now() - (delay * 1000));
+          const delayedFomattedTime = formatTime(delayedDatetime);
+          console.log(delayedFomattedTime, FomattedTime, delay)
+
+          query.ARRIVETIME = { $gt: delayedFomattedTime, $ne: "00:00:00" };
+        }
+
+        console.log(query,sort)
+        const nowStation = await TimeTable.findOne(query).sort(sort) //.limit(1);
+            // .populate('TRAIN_NO')
+            //   .populate({
+            //     path: 'trainData',
+            //     foreignField: 'TRAIN_NO',    // Field in Profile model
+            //     localField: 'TRAIN_NO',       // Field in User model
+            //     select: 'TRAIN_NO statnId lastRecptnDt recptnDt trainSttus delay -_id'    // Select specific fields
+            // })
         // const trainData = await Train.findOne({trainNo:trainNo})
-        console.log(items)
+        console.log(nowStation)
 
         // const {msg,title} = makeMsgsForStations(items);
-        const resData = makeMsgsForStations(items);//[{msg: msg,title:title, currentStationCD: items[0]?.STATION_CD,trainData:trainData}]
+        const resData = makeMsgsForStation(nowStation,trainData);//[{msg: msg,title:title, currentStationCD: items[0]?.STATION_CD,trainData:trainData}]
         console.log(resData)
         res.json(resData);
 
@@ -206,10 +201,10 @@ router.get('/msgfortrain', async (req, res) => {
 
 
 
-// Get metro stations
+// Get metro upcoming trains
 router.get('/msgforstation', async (req, res) => {
   try {
-    let stationId = req.query.station_id;
+    // let stationId = req.query.station_id;
     let trainNo = req.query.train_no;
     let frCode = req.query.fr_code;
     let inoutTag = req.query.inout_tag;
@@ -225,27 +220,60 @@ router.get('/msgforstation', async (req, res) => {
       // if(inoutTag == 1) sort.TRAIN_NO = -1;
       // else sort.TRAIN_NO = 1; 
     }
+    const stationId = "1008000" + frCode
+
+    if(inoutTag == "1"){
+      updnLine = "0"
+      trainQuery = { statnId:{$gt:stationId},updnLine:updnLine }
+    }else{
+      updnLine = "1"
+      trainQuery = { statnId:{$lt:stationId},updnLine:updnLine }
+    } 
 
     const currentTime = formatTime(new Date());
     console.log(currentTime)
 
-    query.LEFTTIME = { $gt: currentTime };
+    // query.LEFTTIME = { $gt: currentTime, $ne: "00:00:00" };
 
     try {
-        // Fetch data from the external API
-        console.log(query,sort)
-        const trains = await TimeTable.find(query)
-              .populate({
-                path: 'TRAIN_NO',
-                foreignField: 'TRAIN_NO',    // Field in Profile model
-                localField: 'TRAIN_NO',       // Field in User model
-                select: 'TRAIN_NO statnId lastRecptnDt recptnDt trainSttus delay -_id'    // Select specific fields
-              })
-              .sort(sort).limit(2);
+        // const trainData = await TimeTable
+        //     .findOne({
+        //       'FR_CODE':frCode, 
+        //       'INOUT_TAG':inoutTag, 
+        //       'ARRIVETIME':{$lt:currentTime}})
+        //     .sort({'ARRIVETIME':-1})
+        // trainQuery = { updnLine:updnLine }
+        console.log('trainQuery:',trainQuery)
+        const trainData = await Train.findOne(trainQuery).sort({trainNo:1})
+        console.log("trainData:",trainData)
+
+        const {
+          STATION_NM,
+          recptnDt,
+          trainSttus,
+          delay
+        } = trainData;
+        console.log('delay,trainSttus,STATION_NM:',delay,trainSttus,STATION_NM)
+
+        if(delay){
+          
+          const FomattedTime = formatTime(new Date());
+          const delayedDatetime = new Date(Date.now() - (delay * 1000));
+          const delayedFomattedTime = formatTime(delayedDatetime);
+          console.log(delayedFomattedTime, FomattedTime, delay,trainSttus)
+
+          query.ARRIVETIME = { $gt: delayedFomattedTime, $ne: "00:00:00" };
+        }else{
+          console.log('no delay')
+          query.ARRIVETIME = { $gt: currentTime, $ne: "00:00:00" };
+        }
+
+        console.log('query,sort:',query,sort)
+        const trains = await TimeTable.find(query).sort(sort).limit(2);
         console.log(trains)
 
         // const {msg,title} = makeMsgsWithTrains(trains);
-        const resData = makeMsgsWithTrains(trains);//[{msg: msg,title:title, ] //trains.map{x => x.TRAIN_NO}
+        const resData = makeMsgsWithTrains(trains,trainData);//[{msg: msg,title:title, ] //trains.map{x => x.TRAIN_NO}
         console.log(resData)
         res.json(resData);
 

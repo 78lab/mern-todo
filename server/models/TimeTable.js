@@ -5,7 +5,7 @@ const TimeTableSchema = new mongoose.Schema({
   FR_CODE: { type: String, required: true },
   STATION_CD: { type: String, required: true },
   STATION_NM: { type: String, required: true },
-  TRAIN_NO: { type: String, required: true, ref: 'Train' },
+  TRAIN_NO: { type: String, required: true },
   ARRIVETIME: { type: String, required: true },
   LEFTTIME: { type: String, required: true },
   ORIGINSTATION: { type: String, required: true },
@@ -18,9 +18,10 @@ const TimeTableSchema = new mongoose.Schema({
   DESTSTATION2: { type: String },
   EXPRESS_YN: { type: String, required: true },
   BRANCH_LINE: { type: String },
-  // delay: { type: Number, default: 0 },
-  // recptnDt: { type: String },
-  // trainSttus: { type: String },
+  // trainData: { type: String, ref: 'Train' },
+  delay: { type: Number, default: 0 },
+  recptnDt: { type: String },
+  trainSttus: { type: String },
 }, { timestamps: true });
 
 module.exports = mongoose.model('TimeTable', TimeTableSchema);
