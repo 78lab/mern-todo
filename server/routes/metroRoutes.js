@@ -12,7 +12,7 @@ const SEOUL_BASE_URL = "http://swopenapi.seoul.go.kr/api/subway";
 
 // let tag_messages = [];
 
-const calculateTimeLeft = (leftTime, delay) => {
+const calculateTimeLeft = (leftTime, delay = 0) => {
   const [hours, minutes, seconds] = leftTime.split(':');
   const leftTimeInSeconds = parseInt(hours) * 3600 + parseInt(minutes) * 60 + parseInt(seconds);
 
@@ -32,6 +32,9 @@ const makeMsgsForStation = (item, trainData) => {
   // let nowData = null;
   // let train_updn = null;
 
+  if(!item) return {msg, title};
+
+
       const {
         TRAIN_NO,
         FR_CODE,
@@ -45,18 +48,18 @@ const makeMsgsForStation = (item, trainData) => {
         STATION_CD,
         STATION_NM,
         LINE_NUM,
-      } = item;
+      } = item  ?? {};
 
       const {
         recptnDt,
         trainSttus,
-        delay
-      } = trainData
+        delay = 0
+      } = trainData ?? {}
 
       console.log(STATION_NM,ARRIVETIME, LEFTTIME,recptnDt,trainSttus,delay);
       const {min, sec} = calculateTimeLeft(ARRIVETIME,delay);
 
-      const msgTemp = `이번역 ${STATION_NM} ${min}분 ${sec}초 d:${delay}`;
+      const msgTemp = `이번역 ${STATION_NM} ${min}:${sec} d:${delay} s:${trainSttus}`;
 
       msg = msg ? `${msg}\n${msgTemp}` : msgTemp;
       title = `${TRAIN_NO}열차(${LINE_NUM}) 탑승중 ${SUBWAYSNAME}>${SUBWAYENAME}`;
@@ -71,12 +74,42 @@ const makeMsgsForStation = (item, trainData) => {
   return resData; 
 }
 
+const makeMsgsForFistStation = (trains) => {
+  let msg = null;
+  let title = null;
+
+  if(!trains || trains.length === 0) return {msg, title};
+
+  trains.forEach(item => {
+      const {
+        TRAIN_NO,
+        ARRIVETIME,
+        LEFTTIME,
+        SUBWAYENAME,
+        SUBWAYSNAME,
+        STATION_NM,
+        LINE_NUM
+      } = item;
+
+      console.log(TRAIN_NO,ARRIVETIME, LEFTTIME,SUBWAYENAME,SUBWAYSNAME,STATION_NM);
+      const {min, sec} = calculateTimeLeft(LEFTTIME,0);
+      const msgTemp = `(${TRAIN_NO}) ${min}:${sec} 후 출발`;
+
+      msg = msg ? `${msg}\n${msgTemp}` : msgTemp;
+      title = `${STATION_NM}역(${LINE_NUM}) ${SUBWAYSNAME}>${SUBWAYENAME}`;
+  });
+
+  resData = [{ msg, title,currentTrainNo:trains[0]?.trainNo}]
+  console.log(resData);
+  return resData; 
+};
+
 
 const makeMsgsWithTrains = (trains, trainData) => {
     let msg = null;
     let title = null;
-    // let nowData = null;
-    // let train_updn = null;
+
+    if(!trains || trains.length === 0) return {msg, title};
 
     trains.forEach(item => {
         const {
@@ -96,28 +129,20 @@ const makeMsgsWithTrains = (trains, trainData) => {
         const {
           recptnDt,
           trainSttus,
-          delay
-        } = trainData
+          delay = 0
+        } = trainData ?? {}
 
 
         console.log(TRAIN_NO,ARRIVETIME, LEFTTIME,recptnDt,trainSttus,delay);
         const {min, sec} = calculateTimeLeft(ARRIVETIME,delay);
 
-        const msgTemp = `(${TRAIN_NO}) ${min}분 ${sec}초 d:${delay}`;
+        const msgTemp = `(${TRAIN_NO}) ${min}:${sec} d:${delay} s:${trainSttus}`;
 
         msg = msg ? `${msg}\n${msgTemp}` : msgTemp;
         title = `${STATION_NM}역(${LINE_NUM}) ${SUBWAYSNAME}>${SUBWAYENAME}`;
     });
     
-    // title = `${trains[0].statnNm}역(${trains[0].trainLineNm}) ${timeAgo(trains[0].recptnDt)}`;
-    // const updn = train_updn === "상행" ? "0" : "1";
-    // const tag_key = `s-${trains[0].statnId}-${updn}`;
-    // const tag_val = "true";
-
-    // console.log(msg, title);
-    // return { msg, title };
-
-    resData = [{ msg, title,currentTrainNo:trains[0]?.trainNo,nowData:trains[0]}]
+    resData = [{ msg, title,currentTrainNo:trains[0]?.TRAIN_NO,nowData:trainData}]
     console.log(resData);
     return resData; 
 };
@@ -157,12 +182,8 @@ router.get('/msgfortrain', async (req, res) => {
         const trainData = await Train.findOne({'trainNo':trainNo})
         console.log(trainData)
 
-        const {
-          statnId,
-          recptnDt,
-          trainSttus,
-          delay
-        } = trainData;
+        const { trainSttus = "", delay = 0 } = trainData ?? {};
+        console.log('delay, trainSttus:', delay, trainSttus);
 
         if(delay){
           const FomattedTime = formatTime(new Date());
@@ -233,49 +254,46 @@ router.get('/msgforstation', async (req, res) => {
     const currentTime = formatTime(new Date());
     console.log(currentTime)
 
-    // query.LEFTTIME = { $gt: currentTime, $ne: "00:00:00" };
-
     try {
-        // const trainData = await TimeTable
-        //     .findOne({
-        //       'FR_CODE':frCode, 
-        //       'INOUT_TAG':inoutTag, 
-        //       'ARRIVETIME':{$lt:currentTime}})
-        //     .sort({'ARRIVETIME':-1})
-        // trainQuery = { updnLine:updnLine }
-        console.log('trainQuery:',trainQuery)
-        const trainData = await Train.findOne(trainQuery).sort({trainNo:1})
-        console.log("trainData:",trainData)
-
-        const {
-          STATION_NM,
-          recptnDt,
-          trainSttus,
-          delay
-        } = trainData;
-        console.log('delay,trainSttus,STATION_NM:',delay,trainSttus,STATION_NM)
-
-        if(delay){
-          
-          const FomattedTime = formatTime(new Date());
-          const delayedDatetime = new Date(Date.now() - (delay * 1000));
-          const delayedFomattedTime = formatTime(delayedDatetime);
-          console.log(delayedFomattedTime, FomattedTime, delay,trainSttus)
-
-          query.ARRIVETIME = { $gt: delayedFomattedTime, $ne: "00:00:00" };
+        //시작역일경우
+        if((inoutTag == 1 && frCode == "827") || (inoutTag == 2 && frCode == "804")){ 
+          query.LEFTTIME = { $gt: currentTime };
+          console.log('query,sort:',query,sort)
+          const trains = await TimeTable.find(query).sort(sort).limit(2);
+          console.log(trains)
+          const resData = makeMsgsForFistStation(trains)
+          console.log(resData)
+          res.json(resData);
+        //시작역이 아닐경우
         }else{
-          console.log('no delay')
-          query.ARRIVETIME = { $gt: currentTime, $ne: "00:00:00" };
+
+          console.log('trainQuery:',trainQuery)
+          const trainData = await Train.findOne(trainQuery).sort({trainNo:1})
+          console.log("trainData:",trainData)
+  
+          const { trainSttus = null, delay = 0 } = trainData ?? {};
+          console.log('delay, trainSttus:', delay, trainSttus);
+
+          if(delay){
+          
+            const FomattedTime = formatTime(new Date());
+            const delayedDatetime = new Date(Date.now() - (delay * 1000));
+            const delayedFomattedTime = formatTime(delayedDatetime);
+            console.log(delayedFomattedTime, FomattedTime, delay,trainSttus)
+  
+            query.ARRIVETIME = { $gt: delayedFomattedTime, $ne: "00:00:00" };
+          }else{
+            console.log('no delay')
+            query.ARRIVETIME = { $gt: currentTime, $ne: "00:00:00" };
+          }
+
+          console.log('query,sort:',query,sort)
+          const trains = await TimeTable.find(query).sort(sort).limit(2);
+          console.log(trains)
+          const resData = makeMsgsWithTrains(trains,trainData);//[{msg: msg,title:title, ] //trains.map{x => x.TRAIN_NO}
+          console.log(resData)
+          res.json(resData);
         }
-
-        console.log('query,sort:',query,sort)
-        const trains = await TimeTable.find(query).sort(sort).limit(2);
-        console.log(trains)
-
-        // const {msg,title} = makeMsgsWithTrains(trains);
-        const resData = makeMsgsWithTrains(trains,trainData);//[{msg: msg,title:title, ] //trains.map{x => x.TRAIN_NO}
-        console.log(resData)
-        res.json(resData);
 
     } catch (error) {
         console.error('Error fetching messages:', error);
