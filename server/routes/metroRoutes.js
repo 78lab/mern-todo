@@ -32,7 +32,12 @@ const makeMsgsForStation = (item, trainData) => {
   // let nowData = null;
   // let train_updn = null;
 
-  if(!item) return {msg, title};
+  if(!item){
+    msg = "열차가 종점에 도착했습니다.";
+    title = "열차 운행 완료";
+    isEnd = true
+    return [{msg, title, isEnd}];
+  } 
 
 
       const {
@@ -78,7 +83,7 @@ const makeMsgsForFistStation = (trains) => {
   let msg = null;
   let title = null;
 
-  if(!trains || trains.length === 0) return {msg, title};
+  if(!trains || trains.length === 0) return [{msg, title}];
 
   trains.forEach(item => {
       const {
@@ -109,7 +114,7 @@ const makeMsgsWithTrains = (trains, trainData) => {
     let msg = null;
     let title = null;
 
-    if(!trains || trains.length === 0) return {msg, title};
+    if(!trains || trains.length === 0) return [{msg, title}];
 
     trains.forEach(item => {
         const {
@@ -163,36 +168,37 @@ router.get('/msgfortrain', async (req, res) => {
     // let stationId = req.query.station_id;
     let trainNo = req.query.train_no;
     // let frCode = req.query.fr_code;
-    let inoutTag = req.query.inout_tag;
+    // let inoutTag = req.query.inout_tag;
     let weekTag = req.query.week_tag;
     let query = {}
     let sort = {}
     // if (frCode) { query.FR_CODE = frCode; }
-    if (inoutTag) { query.INOUT_TAG = inoutTag; }
+    // if (inoutTag) { query.INOUT_TAG = inoutTag; }
     if (weekTag) { query.WEEK_TAG = weekTag; }
     if (trainNo) { 
       query.TRAIN_NO = trainNo; 
-      if(inoutTag == 1) sort.FR_CODE = -1;
-      else sort.FR_CODE = 1; 
+      sort.ARRIVETIME = 1;
+      // if(inoutTag == 1) sort.FR_CODE = -1;
+      // else sort.FR_CODE = 1; 
     }
 
     try {
         // Fetch data from the external API
         
         const trainData = await Train.findOne({'trainNo':trainNo})
-        console.log(trainData)
+        console.log("trainData: ", trainData)
 
         const { trainSttus = "", delay = 0 } = trainData ?? {};
         console.log('delay, trainSttus:', delay, trainSttus);
 
-        if(delay){
+        // if(delay){}
           const FomattedTime = formatTime(new Date());
           const delayedDatetime = new Date(Date.now() - (delay * 1000));
           const delayedFomattedTime = formatTime(delayedDatetime);
           console.log(delayedFomattedTime, FomattedTime, delay)
 
           query.ARRIVETIME = { $gt: delayedFomattedTime, $ne: "00:00:00" };
-        }
+        
 
         console.log(query,sort)
         const nowStation = await TimeTable.findOne(query).sort(sort) //.limit(1);
@@ -204,7 +210,7 @@ router.get('/msgfortrain', async (req, res) => {
             //     select: 'TRAIN_NO statnId lastRecptnDt recptnDt trainSttus delay -_id'    // Select specific fields
             // })
         // const trainData = await Train.findOne({trainNo:trainNo})
-        console.log(nowStation)
+        console.log("nowStation:",nowStation)
 
         // const {msg,title} = makeMsgsForStations(items);
         const resData = makeMsgsForStation(nowStation,trainData);//[{msg: msg,title:title, currentStationCD: items[0]?.STATION_CD,trainData:trainData}]
