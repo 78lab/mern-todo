@@ -166,6 +166,7 @@ const formatTime = (date) => {
 router.get('/msgfortrain', async (req, res) => {
   try {
     // let stationId = req.query.station_id;
+    let subwayId = req.query.subway_id;
     let trainNo = req.query.train_no;
     // let frCode = req.query.fr_code;
     // let inoutTag = req.query.inout_tag;
@@ -232,6 +233,7 @@ router.get('/msgfortrain', async (req, res) => {
 router.get('/msgforstation', async (req, res) => {
   try {
     // let stationId = req.query.station_id;
+    let subwayId = req.query.subway_id;
     let trainNo = req.query.train_no;
     let frCode = req.query.fr_code;
     let inoutTag = req.query.inout_tag;
@@ -247,16 +249,16 @@ router.get('/msgforstation', async (req, res) => {
       // if(inoutTag == 1) sort.TRAIN_NO = -1;
       // else sort.TRAIN_NO = 1; 
     }
-    const stationId = "1008000" + frCode
+    const stationId = subwayId+"000" + frCode
 
     if(inoutTag == "1"){
       updnLine = "0"
-      trainQuery = { statnId:{$gt:stationId},updnLine:updnLine }
+      trainQuery = { statnId:{$gt:stationId},updnLine:updnLine , subwayId:subwayId }
     }else{
       updnLine = "1"
-      trainQuery = { statnId:{$lt:stationId},updnLine:updnLine }
+      trainQuery = { statnId:{$lt:stationId},updnLine:updnLine, subwayId:subwayId }
     } 
-
+    console.log(trainQuery)
     const currentTime = formatTime(new Date());
     console.log(currentTime)
 

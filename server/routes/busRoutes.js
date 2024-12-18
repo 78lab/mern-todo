@@ -12,8 +12,95 @@ const BUS_ARRIVAL_URL = BUS_BASE_URL + `/busarrivalservice/getBusArrivalList?ser
 const BUS_STATION_AROUND_LIST_URL = BUS_BASE_URL + `/busstationservice/getBusStationAroundList?serviceKey=${PUB_DATA_API_KEY}`
 
 
+const TAGO_BUS_BASE_URL = "https://apis.data.go.kr/1613000"
+const TAGO_BUS_ARRIVAL_URL = TAGO_BUS_BASE_URL + `/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList?serviceKey=${PUB_DATA_API_KEY}&_type=json`
+const TAGO_BUS_STATION_AROUND_LIST_URL = TAGO_BUS_BASE_URL + `/BusSttnInfoInqireService/getCrdntPrxmtSttnList?serviceKey=${PUB_DATA_API_KEY}&_type=json`
+
+
 // Get all todos
-router.get('/getBusStationList', async (req, res) => {
+router.get('/getTBusArrivals', async (req, res) => {
+    try {
+        const cityCode = req.query.cityCode
+      const nodeId = req.query.nodeId
+      console.log("req.query:",req.query)
+    //   const tempUrl = "https://apis.data.go.kr/1613000/BusSttnInfoInqireService/getCrdntPrxmtSttnList?serviceKey=AruAfuXNbzd%2FSJ3kjpQFaLUngxr8ce4O1IKHJFtPxxk8CBngL8FvTffnsrWwirDx4t1kESNbX1nS7M3z4x5tuQ%3D%3D&_type=json"
+      // Fetch data from the external API
+      console.log("TAGO_BUS_ARRIVAL_URL",TAGO_BUS_ARRIVAL_URL)
+      const params = {cityCode, nodeId}
+      console.log(params)
+      const busArrivalListRes = await axios.get(TAGO_BUS_ARRIVAL_URL,{params} );
+      console.log(busArrivalListRes.data)
+      const resData = busArrivalListRes.data.response.body.items.item
+      console.log("resData:",resData)
+      if(resData instanceof Array){
+        console.log("resData instanceof Array")
+        res.json(resData);
+      }else if(resData){
+        console.log("resData not Array")
+        res.json([resData]);
+      }else{
+        res.json([]);
+      }
+      
+
+      // const items = await BusRouteInfo.find();
+      // res.json(items);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+
+
+// Get all todos
+router.get('/getTBusStations', async (req, res) => {
+    try {
+      const lat = req.query.lat
+      const lon = req.query.lon
+      console.log("lat,lon:",lat,lon)
+    //   const tempUrl = "https://apis.data.go.kr/1613000/BusSttnInfoInqireService/getCrdntPrxmtSttnList?serviceKey=AruAfuXNbzd%2FSJ3kjpQFaLUngxr8ce4O1IKHJFtPxxk8CBngL8FvTffnsrWwirDx4t1kESNbX1nS7M3z4x5tuQ%3D%3D&_type=json"
+      // Fetch data from the external API
+      console.log("TAGO_BUS_STATION_AROUND_LIST_URL",TAGO_BUS_STATION_AROUND_LIST_URL)
+      const params = {gpsLati: lat, gpsLong:lon}
+      console.log(params)
+      const busStationListRes = await axios.get(TAGO_BUS_STATION_AROUND_LIST_URL,{params} );
+      // const busArrivalResData = busStationListRes.data
+      console.log(busStationListRes.data)
+      const resData = busStationListRes.data.response.body.items.item    
+    //   const result = await xml2js.parseStringPromise(busStationListRes.data, { explicitArray: false });
+    //   const resultCode = result.response.msgHeader.resultCode;
+    //   if (resultCode !== '0') {
+    //       console.log(`Error fetching data for lat,lon ${lat},${lon}`);
+    //       throw new Error(`Error fetching data for lat,lon ${lat},${lon}`);
+    //   }
+  
+    //   // busStationAroundList
+    //   const busStationAroundList = result.response.msgBody.busStationAroundList;
+    //   const routeData = Array.isArray(busStationAroundList) ? busStationAroundList : [busStationAroundList];
+    //   const resData = routeData.map(item => ({
+    //       centerYn: item.centerYn,
+    //       districtCd: item.districtCd,
+    //       mobileNo: item.mobileNo,
+    //       regionName: item.regionName ,
+    //       stationId: item.stationId,
+    //       stationName: item.stationName,
+    //       x: item.x,
+    //       y: item.y,
+    //       distance: item.distance,
+    //   }));
+
+      console.log(resData)
+      res.json(resData);
+  
+      // const items = await BusRouteInfo.find();
+      // res.json(items);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+// Get all todos
+router.get('/getGBusStations', async (req, res) => {
   try {
     const lat = req.query.lat
     const lon = req.query.lon
