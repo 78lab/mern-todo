@@ -233,6 +233,7 @@ router.get('/msgfortrain', async (req, res) => {
 router.get('/msgforstation', async (req, res) => {
   try {
     // let stationId = req.query.station_id;
+    let dtype = req.query.dtype
     let subwayId = req.query.subway_id;
     let trainNo = req.query.train_no;
     let frCode = req.query.fr_code;
@@ -245,7 +246,7 @@ router.get('/msgforstation', async (req, res) => {
     if (weekTag) { query.WEEK_TAG = weekTag; }
     if (frCode) { 
       query.FR_CODE = frCode; 
-      sort.TRAIN_NO = 1; 
+      // sort.TRAIN_NO = 1; 
       // if(inoutTag == 1) sort.TRAIN_NO = -1;
       // else sort.TRAIN_NO = 1; 
     }
@@ -264,9 +265,11 @@ router.get('/msgforstation', async (req, res) => {
 
     try {
         //시작역일경우
-        if((inoutTag == 1 && frCode == "827") || (inoutTag == 2 && frCode == "804")){ 
+        if(inoutTag == dtype){
+        // if((inoutTag == 1 && frCode == "827") || (inoutTag == 2 && frCode == "804")){ 
+          sort.LEFTTIME = 1;
           query.LEFTTIME = { $gt: currentTime };
-          console.log('query,sort:',query,sort)
+          console.log('query,sort:inoutTag=dtype',query,sort,inoutTag,dtype)
           const trains = await TimeTable.find(query).sort(sort).limit(2);
           console.log(trains)
           const resData = makeMsgsForFistStation(trains)
@@ -294,7 +297,7 @@ router.get('/msgforstation', async (req, res) => {
             console.log('no delay')
             query.ARRIVETIME = { $gt: currentTime, $ne: "00:00:00" };
           }
-
+          sort.ARRIVETIME = 1;
           console.log('query,sort:',query,sort)
           const trains = await TimeTable.find(query).sort(sort).limit(2);
           console.log(trains)
@@ -316,6 +319,7 @@ router.get('/msgforstation', async (req, res) => {
 // Get time table
 router.get('/timetable', async (req, res) => {
   try {
+    let dtype = req.query.dtype;
     let frCode = req.query.fr_code;
     let inoutTag = req.query.inout_tag;
     let weekTag = req.query.week_tag;
@@ -325,14 +329,20 @@ router.get('/timetable', async (req, res) => {
     if (inoutTag) { query.INOUT_TAG = inoutTag; }
     if (weekTag) { query.WEEK_TAG = weekTag; }
     
+    //FR_CODE 가 있으면 그걸로 검색하여 정렬
     if (frCode) { 
       query.FR_CODE = frCode; 
-      sort.TRAIN_NO = 1; 
+      // sort.TRAIN_NO = 1; 
       // if(inoutTag == 1) sort.TRAIN_NO = -1;
       // else sort.TRAIN_NO = 1; 
-    }
+      if(inoutTag == dtype){
+      // if((inoutTag == 1 && frCode == "827") || (inoutTag == 2 && frCode == "804")){ 
+        sort.LEFTTIME = 1;
+      }else{
+        sort.ARRIVETIME = 1;
+      }
 
-    if (trainNo) { 
+    }else if (trainNo) { 
       query.TRAIN_NO = trainNo; 
       if(inoutTag == 1) sort.FR_CODE = -1;
       else sort.FR_CODE = 1; 

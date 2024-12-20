@@ -13,6 +13,9 @@ const MetroStationSchema = new mongoose.Schema({
         type: String,
         required: true,
       },
+      dtype: {
+        type: String
+      },
   }, { timestamps: true });
 
 const MetroStation = mongoose.model('MetroStation', MetroStationSchema);
