@@ -64,7 +64,7 @@ const makeMsgsForStation = (item, trainData) => {
       console.log(STATION_NM,ARRIVETIME, LEFTTIME,recptnDt,trainSttus,delay);
       const {min, sec} = calculateTimeLeft(ARRIVETIME,delay);
 
-      const msgTemp = `이번역 ${STATION_NM} ${min}:${sec} d:${delay} s:${trainSttus}`;
+      const msgTemp = `이번역 ${STATION_NM}(${FR_CODE}) ${min}:${sec} d:${delay} s:${trainSttus}`;
 
       msg = msg ? `${msg}\n${msgTemp}` : msgTemp;
       title = `${TRAIN_NO}열차(${LINE_NUM}) 탑승중 ${SUBWAYSNAME}>${SUBWAYENAME}`;
@@ -141,10 +141,10 @@ const makeMsgsWithTrains = (trains, trainData) => {
         console.log(TRAIN_NO,ARRIVETIME, LEFTTIME,recptnDt,trainSttus,delay);
         const {min, sec} = calculateTimeLeft(ARRIVETIME,delay);
 
-        const msgTemp = `(${TRAIN_NO}) ${min}:${sec} d:${delay} s:${trainSttus}`;
+        const msgTemp = `(${TRAIN_NO})${SUBWAYSNAME}>${SUBWAYENAME} ${min}:${sec} d:${delay} s:${trainSttus}`;
 
         msg = msg ? `${msg}\n${msgTemp}` : msgTemp;
-        title = `${STATION_NM}역(${LINE_NUM}) ${SUBWAYSNAME}>${SUBWAYENAME}`;
+        title = `${STATION_NM}역(${LINE_NUM})`;
     });
     
     resData = [{ msg, title,currentTrainNo:trains[0]?.TRAIN_NO,nowData:trainData}]
@@ -186,7 +186,7 @@ router.get('/msgfortrain', async (req, res) => {
     try {
         // Fetch data from the external API
         
-        const trainData = await Train.findOne({'trainNo':trainNo})
+        const trainData = await Train.findOne({'TRAIN_NO':trainNo})
         console.log("trainData: ", trainData)
 
         const { trainSttus = "", delay = 0 } = trainData ?? {};

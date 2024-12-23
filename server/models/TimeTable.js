@@ -22,6 +22,8 @@ const TimeTableSchema = new mongoose.Schema({
   delay: { type: Number, default: 0 },
   recptnDt: { type: String },
   trainSttus: { type: String },
+  statnId: { type: String },
+  statnNm: { type: String },
 }, { timestamps: true });
 
 module.exports = mongoose.model('TimeTable', TimeTableSchema);
