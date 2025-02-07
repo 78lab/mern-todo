@@ -13,7 +13,7 @@ const BUS_STATION_AROUND_LIST_URL = BUS_BASE_URL + `/busstationservice/v2/getBus
 
 
 const TAGO_BUS_BASE_URL = "https://apis.data.go.kr/1613000"
-const TAGO_BUS_ARRIVAL_URL = TAGO_BUS_BASE_URL + `/ArvlInfoInqireService/v2/getSttnAcctoArvlPrearngeInfoList?serviceKey=${PUB_DATA_API_KEY}&_type=json`
+const TAGO_BUS_ARRIVAL_URL = TAGO_BUS_BASE_URL + `/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList?serviceKey=${PUB_DATA_API_KEY}&_type=json`
 const TAGO_BUS_STATION_AROUND_LIST_URL = TAGO_BUS_BASE_URL + `/BusSttnInfoInqireService/getCrdntPrxmtSttnList?serviceKey=${PUB_DATA_API_KEY}&_type=json`
 
 
